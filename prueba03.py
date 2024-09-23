@@ -2,6 +2,8 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By  # Importación correcta de By
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 import os
 import time
@@ -50,9 +52,13 @@ try:
     # Abre la página web
     driver.get("https://guiadevalores.fasecolda.com/ConsultaExplorador/Default.aspx?url=C:\\inetpub\\wwwroot\\Fasecolda\\ConsultaExplorador\\Guias\\GuiaValores_NuevoFormato\\" + Nombre_directorio_bajada)
     
-    # Descargar primer archivo
+    # Descargar primer archivo con scrollIntoView para asegurar visibilidad
     nombre_archivo = "Guia_Excel"
     download_link = driver.find_element(By.XPATH, f"//a[contains(text(), '{nombre_archivo}')]")
+    
+    # Scroll hasta el enlace antes de hacer clic
+    driver.execute_script("arguments[0].scrollIntoView(true);", download_link)
+    time.sleep(1)  # Breve pausa
     download_link.click()
 
     # Espera a que la descarga comience
@@ -66,9 +72,17 @@ try:
     else:
         print("El archivo Guia_Excel se ha descargado correctamente.")
 
-    # Descargar segundo archivo
+    # Descargar segundo archivo, con espera explícita y manejo del elemento bloqueador
     nombre_archivo = "Tabla de Homologacion"
-    download_link = driver.find_element(By.XPATH, f"//a[contains(text(), '{nombre_archivo}')]")
+
+    # Ocultar temporalmente el elemento que está bloqueando el clic
+    elemento_bloqueador = driver.find_element(By.CSS_SELECTOR, ".contacto")
+    driver.execute_script("arguments[0].style.visibility='hidden'", elemento_bloqueador)
+
+    # Usar una espera explícita hasta que el enlace sea clickeable
+    download_link = WebDriverWait(driver, 10).until(
+        EC.element_to_be_clickable((By.XPATH, f"//a[contains(text(), '{nombre_archivo}')]"))
+    )
     download_link.click()
 
     # Espera a que la descarga se complete
